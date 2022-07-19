@@ -1,0 +1,6 @@
+---
+- import_playbook: workstation199.yml
+- import_playbook: servera199.yml
+- import_playbook: serverb199.yml
+- import_playbook: welcome.yml
+...

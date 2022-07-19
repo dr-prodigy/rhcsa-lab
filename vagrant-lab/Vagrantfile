@@ -1,0 +1,150 @@
+servers = [
+    {
+		:name => "servera199",
+		:disk_label => "servera199-disk.vdi",
+		:type => "server",
+		:box => "boxomatic/centos-stream-9",
+		:eth1 => "192.168.56.150",
+		:mem => "1024",
+		:cpu => "1"
+	},
+	{
+		:name => "serverb199",
+		:disk_label => "serverb199-disk.vdi",
+		:type => "server",
+		:box => "boxomatic/centos-stream-9",
+		:eth1 => "192.168.56.151",
+		:eth2 => "192.168.56.175",
+		:eth3 => "192.168.56.176",
+		:mem => "1024",
+		:cpu => "1"
+	},
+	{
+		:name => "workstation199",
+		:type => "workstation",
+		:box => "boxomatic/centos-stream-9",
+		:eth1 => "192.168.56.149",
+		:mem => "2048",
+		:cpu => "1"
+	}
+]
+
+$disk1_file = './disk-0-1.vdi'
+$disk2_file = './disk-0-2.vdi'
+
+$configureBox = <<-SCRIPT
+
+	#Script for all nodes
+	sudo yum install epel-release -y
+	
+	#Edit /etc/hosts
+
+    cat >> /etc/hosts <<EOF
+192.168.56.149   workstation199.lab.example.com	workstation199
+192.168.56.150   servera199.lab.example.com	servera199
+192.168.56.151   serverb199.lab.example.com	serverb199
+EOF
+
+	# Change SSH Configuration
+	sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+    echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config
+    systemctl restart sshd.service
+
+SCRIPT
+
+$configureServer2 = <<-SCRIPT
+	# Format extra disks
+	yes|mkfs.ext4 -L extradisk1 /dev/sdb
+	mkdir /extradisk1 ; echo \'LABEL=extradisk1 /extradisk1 ext4 defaults 0 0\' >> /etc/fstab
+	yes|mkfs.ext4 -L extradisk2 /dev/sdc
+	mkdir /extradisk2 ; echo \'LABEL=extradisk2 /extradisk2 ext4 defaults 0 0\' >> /etc/fstab
+SCRIPT
+
+$configureWorkstation = <<-SCRIPT
+	#Install sshpass
+	yum install sshpass -y
+
+	# Generate SSH key and distribute it to other hosts
+	cat /dev/zero | sudo --user=vagrant sshpass -p "vagrant" ssh-keygen -q -N ""
+	for server in servera199 serverb199; do sudo --user=vagrant sshpass -p "vagrant" ssh-copy-id -i /home/vagrant/.ssh/id_rsa.pub vagrant@$server; done
+
+	sudo yum install python3-pip python3-devel httpd vsftpd createrepo ansible -y
+	sudo rm -f /EMPTY
+	sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config; sudo systemctl restart sshd
+SCRIPT
+
+
+Vagrant.configure("2") do |config|
+
+	# use vagrant default login
+    config.ssh.username = "vagrant"
+    config.ssh.password = "vagrant"
+
+	servers.each do |opts|
+
+		config.vm.define opts[:name] do |config|
+
+			config.vm.box = opts[:box]
+			config.vm.box_version = opts[:box_version]
+			config.vm.hostname = opts[:name]
+
+			# Config network
+			config.vm.network :private_network, ip: opts[:eth1]
+			if opts[:eth2]
+				config.vm.network :private_network, ip: opts[:eth2]
+		    end
+			if opts[:eth3]
+				config.vm.network :private_network, ip: opts[:eth3]
+		    end
+
+			if opts[:type] == "server"
+				config.vm.disk :disk, size: "1GB", name: opts[:disk_label]
+			end
+
+			config.vm.provider "virtualbox" do |v|
+				v.name = opts[:name]
+				v.customize ["modifyvm", :id, "--groups", "/RH199 Lab"]
+				v.customize ["modifyvm", :id, "--memory", opts[:mem]]
+				v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
+
+				if opts[:name] == "DISABLED-serverb199"
+					v.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata', '--portcount', 2]
+
+					# create disks
+					unless File.exist?($disk1_file)
+						v.customize ['createhd', '--filename', $disk1_file, '--variant', 'Fixed', '--size', 16 * 1024]
+					end
+					v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', $disk1_file]
+
+					unless File.exist?($disk2_file)
+						v.customize ['createhd', '--filename', $disk2_file, '--variant', 'Fixed', '--size', 16 * 1024]
+					end
+					v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', $disk2_file]
+				end
+			end
+
+			config.vm.provision "shell", inline: $configureBox
+
+			if opts[:name] == "DISABLED-serverb199"
+				config.vm.provision "shell", inline: $configureServer2
+			end
+
+			if opts[:type] == "workstation"
+				config.vm.provision "shell", inline: $configureWorkstation
+				config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: [".git/",".vagrant/","*.vdi"]
+
+				config.vm.provision :ansible_local do |ansible|
+					ansible.playbook = "/vagrant/playbooks/master.yml"
+					ansible.install = false
+					ansible.compatibility_mode = "2.0"
+					ansible.inventory_path = "/vagrant/inventory"
+					ansible.config_file = "/vagrant/ansible.cfg"
+					ansible.limit = "all"
+				end
+			end
+
+			# Reboot
+		    config.vm.provision :shell, :inline => "reboot", run: "always"
+		end
+	end
+end

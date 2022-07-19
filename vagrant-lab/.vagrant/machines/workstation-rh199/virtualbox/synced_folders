@@ -1,0 +1,1 @@
+{"rsync":{"/vagrant":{"type":"rsync","rsync__exclude":[".git/",".vagrant/","*.vdi"],"guestpath":"/vagrant","hostpath":"/home/mmontel/rh199/vagrant-lab","disabled":false,"__vagrantfile":true,"exclude":[".git/",".vagrant/","*.vdi"],"owner":"vagrant","group":"vagrant"}}}

@@ -1,5 +1,5 @@
 ---
-- name: Resetting Server 1
+- name: Resetting Server A
   hosts: servera199
   strategy: free
   ignore_errors: true
@@ -144,17 +144,12 @@
   - name: Rebooting Host
     reboot:
 # ----------------------------------------------------------------------
-- name: Resetting Server 2 
+- name: Resetting Server B
   hosts: serverb199
   strategy: free
   gather_facts: False
   ignore_errors: true
   tasks:
-  - name: Resetting Python
-    file:
-      src: /usr/bin/python3.6
-      path: /usr/bin/python
-      state: link
   - name: Setting Hostname
     hostname: name=serverb199.lab.example.com
   - name: Resetting network config
@@ -296,21 +291,21 @@
     selinux:
       state: permissive
       policy: targeted
-  - name: Rebooting Server 2
+  - name: Rebooting Server B
     reboot:
   - name: Environment Reset Complete
     debug:
       msg:
-        - ' Server 1 and Server 2 have been reset successfully!'
+        - ' Server A and Server B have been reset successfully!'
         - '------------------------------------------------------------------------'
-        - ' Server 2 is rebooting.  If you are unable to access it right away,'
+        - ' Server B is rebooting.  If you are unable to access it right away,'
         - ' wait a couple moments, then try again.'
         - '------------------------------------------------------------------------'
         - ' Accessing The Systems:'
-        - '- Server 1 - 192.168.56.150'
-        - '- Server 2 - 192.168.56.151'
+        - '- Server A - 192.168.56.150'
+        - '- Server B - 192.168.56.151'
         - '- Username/Password - vagrant/vagrant or root/password'
         - '- Access example - `ssh vagrant@192.168.56.150` or `vagrant ssh system1`'
         - ' -----------------------------------------------------------------------'
-        - '- Two Additional interfaces and an additional drive are on Server 2.'
+        - '- Two Additional interfaces and an additional drive are on Server B.'
         - '- Happy Studying!'

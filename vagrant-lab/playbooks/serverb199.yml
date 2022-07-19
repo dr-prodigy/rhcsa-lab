@@ -1,5 +1,5 @@
 ---
-- name: Setting Up Server 2 
+- name: Setting Up Server B 
   hosts: serverb199
   strategy: free
   gather_facts: False

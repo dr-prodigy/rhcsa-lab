@@ -1,4 +1,4 @@
 [rh199]
-workstation199.lab.example.com ansible_host=192.168.56.149 ansible_user=vagrant ansible_ssh_pass=vagrant ansible_python_interpreter=/usr/bin/python3
-servera199.lab.example.com ansible_host=192.168.56.150 ansible_user=vagrant ansible_ssh_pass=vagrant ansible_python_interpreter=/usr/bin/python3
-serverb199.lab.example.com ansible_host=192.168.56.151 ansible_user=vagrant ansible_ssh_pass=vagrant ansible_python_interpreter=/usr/bin/python3
+workstation199 ansible_host=192.168.56.149 ansible_user=vagrant ansible_ssh_pass=vagrant ansible_python_interpreter=/usr/bin/python3
+servera199 ansible_host=192.168.56.150 ansible_user=vagrant ansible_ssh_pass=vagrant ansible_python_interpreter=/usr/bin/python3
+serverb199 ansible_host=192.168.56.151 ansible_user=vagrant ansible_ssh_pass=vagrant ansible_python_interpreter=/usr/bin/python3

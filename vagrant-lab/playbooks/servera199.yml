@@ -1,5 +1,5 @@
 ---
-- name: Setting Up Server 1
+- name: Setting Up Server A
   hosts: servera199
   strategy: free
   ignore_errors: true

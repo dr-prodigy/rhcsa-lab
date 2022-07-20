@@ -68,7 +68,7 @@ $configureWorkstation = <<-SCRIPT
 	cat /dev/zero | sudo --user=vagrant sshpass -p "vagrant" ssh-keygen -q -N ""
 	for server in servera199 serverb199; do sudo --user=vagrant sshpass -p "vagrant" ssh-copy-id -i /home/vagrant/.ssh/id_rsa.pub vagrant@$server; done
 
-	sudo yum install python3-pip python3-devel httpd vsftpd createrepo ansible -y
+	sudo yum install python3-pip python3-devel httpd vsftpd createrepo ansible cockpit -y
 	sudo rm -f /EMPTY
 	sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config; sudo systemctl restart sshd
 SCRIPT
